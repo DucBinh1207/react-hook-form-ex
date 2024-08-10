@@ -19,5 +19,5 @@
 }
 
 .error {
-  @apply mt-auto h-[13%] text-[13px] font-semibold text-red-500;
+  @apply mt-auto h-[13%] text-left text-[13px] font-semibold text-red-500;
 }
