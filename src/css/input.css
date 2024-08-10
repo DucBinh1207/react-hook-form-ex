@@ -1,4 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-    
+
+.step {
+  @apply flex items-center gap-[10px];
+}
+
+.step-number {
+  @apply flex h-[30px] w-[30px] items-center justify-center rounded-[50%] border-[2px] border-solid border-[#767676] font-bold;
+}
+
+.step-name {
+  @apply text-[20px] font-semibold text-[#767676];
+}
+
+.label {
+  @apply ml-[5px] text-[15px] font-semibold text-[#4b4b4b];
+}
+
+.error {
+  @apply mt-auto h-[13%] text-[13px] font-semibold text-red-500;
+}
