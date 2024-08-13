@@ -1,32 +1,100 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  IsEmail,
-  IsName,
-  IsPhone,
-  IsPin,
-  IsRequired,
-} from "../../utils/FormRegex";
 import Toast from "../Toast";
-
-export type TFormState = {
-  firstName: string;
-  lastName: string;
-  gender: string;
-  birthday: string;
-  parentFirstName: string;
-  parentLastName: string;
-  email: string;
-  pin: string;
-  country: string;
-  timeZone: string;
-  phone: string;
-};
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type htmlFormProps = {
   values?: TFormState;
   onSubmitFunc: (values: TFormState) => string;
 };
+
+const schema = z.object({
+  firstName: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^(?:[a-zA-z]*)$/, {
+      message:
+        "Invalid First Name. The First Name contains only uppercase and lowercase letters",
+    }),
+  lastName: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^(?:[a-zA-z]*)$/, {
+      message:
+        "Invalid Last Name. The First Name contains only uppercase and lowercase letters",
+    }),
+  gender: z.enum(["Male", "Female"], { message: "Invalid Gender." }),
+  birthday: z.coerce.date(),
+  parentFirstName: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^(?:[a-zA-z]*)$/, {
+      message:
+        "Invalid First Name. The First Name contains only uppercase and lowercase letters",
+    }),
+  parentLastName: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^(?:[a-zA-z\s]*)$/, {
+      message:
+        "Invalid Last Name. The First Name contains only uppercase and lowercase letters",
+    }),
+  email: z.string().email({
+    message: "Invalid Email. Please enter again (example@example.com)",
+  }),
+  pin: z
+    .string()
+    .regex(/^\d{6}$/, "Invalid Pin Code. Pin code contains 6 digits.")
+    .transform((value) => parseInt(value, 10)),
+  country: z.enum(["Viet Nam", "American", "Japan"], {
+    message: "Invalid Country.",
+  }),
+  timeZone: z.enum(
+    [
+      "UTC-12:00",
+      "UTC-11:00",
+      "UTC-10:00",
+      "UTC-09:00",
+      "UTC-08:00",
+      "UTC-07:00",
+      "UTC-06:00",
+      "UTC-05:00",
+      "UTC-04:00",
+      "UTC-03:00",
+      "UTC-02:00",
+      "UTC-01:00",
+      "UTC+00:00",
+      "UTC+01:00",
+      "UTC+02:00",
+      "UTC+03:00",
+      "UTC+04:00",
+      "UTC+05:00",
+      "UTC+06:00",
+      "UTC+07:00",
+      "UTC+08:00",
+      "UTC+09:00",
+      "UTC+10:00",
+      "UTC+11:00",
+      "UTC+12:00",
+      "UTC+13:00",
+      "UTC+14:00",
+    ],
+    {
+      message: "Invalid Time Zone.",
+    },
+  ),
+  phone: z.string().regex(/^\+(?:[0-9] ?){6,14}[0-9]$/, {
+    message:
+      "Invalid Phone Number. Phone number includes country code and total number is 6-14 digits",
+  }),
+});
+
+type TFormState = z.infer<typeof schema>;
 
 export default function Form({
   values: valuesProp,
@@ -36,172 +104,33 @@ export default function Form({
   const defaultValues = valuesProp ?? {
     firstName: "",
     lastName: "",
-    gender: "",
-    birthday: "",
+    gender: undefined,
+    birthday: undefined,
     parentFirstName: "",
     parentLastName: "",
     email: "",
-    pin: "",
-    country: "",
-    timeZone: "",
+    pin: undefined,
+    country: undefined,
+    timeZone: undefined,
     phone: "",
   };
 
   const {
     register,
     handleSubmit,
-    // getValues,
-    // watch,
-    setError,
-    formState: {
-      // touchedFields,
-      errors,
-    },
+    formState: { errors },
   } = useForm<TFormState>({
     defaultValues,
+    resolver: zodResolver(schema),
   });
 
   const [isToastOpen, setIsToastOpen] = useState(false);
-
   const openToast = () => setIsToastOpen(true);
   const closeToast = () => setIsToastOpen(false);
 
-  type FieldErr = {
-    required?: string;
-    isName?: string;
-    isEmail?: string;
-    isPin?: string;
-    isPhone?: string;
-  };
-
-  type FieldErrs = {
-    firstName: FieldErr;
-    lastName: FieldErr;
-    gender: FieldErr;
-    birthday: FieldErr;
-    parentFirstName: FieldErr;
-    parentLastName: FieldErr;
-    email: FieldErr;
-    pin: FieldErr;
-    country: FieldErr;
-    timeZone: FieldErr;
-    phone: FieldErr;
-  };
-
-  const fieldErr: FieldErrs = {
-    firstName: {
-      required: "Required",
-      isName:
-        "Invalid First Name. The First Name contains only uppercase and lowercase letters",
-    },
-
-    lastName: {
-      isName:
-        "Invalid Last Name.The Last Name contains only uppercase and lowercase letters",
-    },
-
-    gender: {
-      required: "Required",
-    },
-
-    birthday: {
-      required: "Required",
-    },
-
-    parentFirstName: {
-      required: "Required",
-      isName:
-        "Invalid First Name. The First Name contains only uppercase and lowercase letters",
-    },
-
-    parentLastName: {
-      isName:
-        "Invalid Last Name. The First Name contains only uppercase and lowercase letters",
-    },
-
-    email: {
-      required: "Required",
-      isEmail: "Invalid Email. Please enter again (example@example.com)",
-    },
-
-    pin: {
-      required: "Required",
-      isPin: "Invalid Pin Code. Pin code contains 6 digits",
-    },
-
-    country: {
-      required: "Required",
-    },
-
-    timeZone: {
-      required: "Required",
-    },
-
-    phone: {
-      required: "Required",
-      isPhone:
-        "Invalid Phone Number. Phone number includes country code and total number is 6-14 digits",
-    },
-  };
-
-  function ValidateField(fieldName: keyof FieldErrs, value: string) {
-    const error = fieldErr[fieldName];
-    if (error) {
-      if (error.required !== undefined) {
-        if (!IsRequired(value)) {
-          throw new Error(error.required);
-        }
-      }
-
-      if (error.isName !== undefined) {
-        if (!IsName(value)) {
-          throw new Error(error.isName);
-        }
-      }
-
-      if (error.isEmail !== undefined) {
-        if (!IsEmail(value)) {
-          throw new Error(error.isEmail);
-        }
-      }
-
-      if (error.isPin !== undefined) {
-        if (!IsPin(value)) {
-          throw new Error(error.isPin);
-        }
-      }
-
-      if (error.isPhone !== undefined) {
-        if (!IsPhone(value)) {
-          throw new Error(error.isPhone);
-        }
-      }
-    }
-  }
-
   const onSubmit = (value: TFormState) => {
-    let hasError = false;
-
-    Object.keys(value).forEach((key) => {
-      try {
-        ValidateField(key as keyof FieldErrs, value[key as keyof TFormState]);
-      } catch (error) {
-        if (error instanceof Error) {
-          hasError = true;
-          setError(key as keyof TFormState, {
-            type: "manual",
-            message: error.message,
-          });
-          return null;
-        } else {
-          console.log("An unknown error occurred");
-        }
-      }
-    });
-    if (!hasError) {
-      console.log(onSubmitFunc(defaultValues)); // ----> Add or Update Function 
-      openToast();
-    }
+    console.log(onSubmitFunc(value)); // ----> Add or Update Function
+    openToast();
   };
 
   function InputTemplate(keyName: keyof TFormState, placeholder: string) {
@@ -227,7 +156,6 @@ export default function Form({
           <div className="label">First Name*</div>
           {InputTemplate("firstName", "Enter your First Name")}
           <div className="first__name__err error">
-            {" "}
             {errors.firstName?.message || ""}
           </div>
         </div>
@@ -236,7 +164,6 @@ export default function Form({
           <div className="label">Last Name</div>
           {InputTemplate("lastName", "Enter your Last Name")}
           <div className="last__name__err error">
-            {" "}
             {errors.lastName?.message || ""}
           </div>
         </div>
@@ -255,7 +182,6 @@ export default function Form({
             <option value="Female">Female</option>
           </select>
           <div className="gender__err error">
-            {" "}
             {errors.gender?.message || ""}
           </div>
         </div>
@@ -277,7 +203,6 @@ export default function Form({
             }}
           />
           <div className="birthday__err error">
-            {" "}
             {errors.birthday?.message || ""}
           </div>
         </div>
@@ -286,7 +211,6 @@ export default function Form({
           <div className="label">Mother/Father's First Name*</div>
           {InputTemplate("parentFirstName", "Enter First Name")}
           <div className="parent__first__name__err error">
-            {" "}
             {errors.parentFirstName?.message || ""}
           </div>
         </div>
@@ -296,7 +220,6 @@ export default function Form({
           {InputTemplate("parentLastName", "Enter Last Name")}
 
           <div className="parent__last__name__err error">
-            {" "}
             {errors.parentLastName?.message || ""}
           </div>
         </div>
@@ -306,7 +229,6 @@ export default function Form({
             <div className="label">Email Address*</div>
             {InputTemplate("email", "Enter your Email Address")}
             <div className="email__err error">
-              {" "}
               {errors.email?.message || ""}
             </div>
           </div>
@@ -329,11 +251,10 @@ export default function Form({
               Select
             </option>
             <option value="Viet Nam">Viet Nam</option>
-            <option value="AmeriCan">American</option>
+            <option value="American">American</option>
             <option value="Japan">Japan</option>
           </select>
           <div className="country__err error">
-            {" "}
             {errors.country?.message || ""}
           </div>
         </div>
@@ -377,7 +298,6 @@ export default function Form({
             <option value="UTC+14:00">UTC+14:00</option>
           </select>
           <div className="time__zone__err error">
-            {" "}
             {errors.timeZone?.message || ""}
           </div>
         </div>
